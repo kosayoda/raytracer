@@ -1,10 +1,18 @@
 use color_eyre::Result;
 
+use raytracing::Raytracer;
+
 fn main() -> Result<()> {
     setup()?;
     tracing::debug!("Debug logging enabled.");
 
-    tracing::info!("Hello raytracing");
+    let options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "raytracing",
+        options,
+        Box::new(|_cc| Box::new(Raytracer::default())),
+    )
+    .unwrap();
 
     Ok(())
 }

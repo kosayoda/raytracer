@@ -10,6 +10,9 @@ license = "MIT OR Apache-2.0"
 clap = { version = "4.1.6", features = ["derive"] }
 # Binary error handling
 color-eyre = "0.6.2"
+# For displaying raytracing output
+eframe = "0.21.3"
+egui = "0.21.0"
 # Colored strings
 owo-colors = "3.5.0"
 # Library error types
