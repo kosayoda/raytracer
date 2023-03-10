@@ -1,0 +1,31 @@
+[package]
+name = "raytracing"
+version = "0.1.0"
+authors = ["kosayoda <git@siek.dev>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Argument parser
+clap = { version = "4.1.6", features = ["derive"] }
+# Binary error handling
+color-eyre = "0.6.2"
+# Colored strings
+owo-colors = "3.5.0"
+# Library error types
+thiserror = "1.0.38"
+# Logging utilities
+time = { version = "0.3.17", features = ["formatting"] }
+tracing = "0.1.37"
+tracing-error = "0.2.0"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter", "time"] }
+# Unicode grapheme cluster support for strings
+unicode-segmentation = "1.10.1"
+
+# Build `backtrace` with optimizations for `color-eyre` performance
+[profile.dev.package.backtrace]
+opt-level = 3
+
+# Comment/uncomment as necessary for cargo-flamegraph
+# [profile.release]
+# debug = true
