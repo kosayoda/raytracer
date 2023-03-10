@@ -13,17 +13,26 @@ color-eyre = "0.6.2"
 # For displaying raytracing output
 eframe = "0.21.3"
 egui = "0.21.0"
+# For resizing raytracer image for egui
+image = "0.24.5"
+fast_image_resize = "2.6.0"
+# For math primitives (Vec3...)
+glam = "0.23.0"
 # Colored strings
 owo-colors = "3.5.0"
+serde = "1.0.154"
 # Library error types
 thiserror = "1.0.38"
 # Logging utilities
 time = { version = "0.3.17", features = ["formatting"] }
+toml = "0.7.2"
 tracing = "0.1.37"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter", "time"] }
 # Unicode grapheme cluster support for strings
 unicode-segmentation = "1.10.1"
+rgb = "0.8.36"
+derive_more = "0.99.17"
 
 # Build `backtrace` with optimizations for `color-eyre` performance
 [profile.dev.package.backtrace]

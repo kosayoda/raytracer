@@ -1,16 +1,30 @@
+use clap::{arg, value_parser, Command};
 use color_eyre::Result;
 
-use raytracing::Raytracer;
+use raytracing::{Config, Raytracer};
 
 fn main() -> Result<()> {
     setup()?;
     tracing::debug!("Debug logging enabled.");
 
+    let config: Config = {
+        let matches = Command::new("raytracer")
+            .arg(
+                arg!(<config> "The raytracer configuration")
+                    .value_parser(value_parser!(std::path::PathBuf)),
+            )
+            .get_matches();
+
+        let mut config = matches.get_one::<std::path::PathBuf>("config").unwrap();
+        let config = std::fs::read_to_string(&mut config)?;
+        toml::from_str(&config)?
+    };
+
     let options = eframe::NativeOptions::default();
     eframe::run_native(
         "raytracing",
         options,
-        Box::new(|_cc| Box::new(Raytracer::default())),
+        Box::new(|_cc| Box::new(Raytracer::new(config))),
     )
     .unwrap();
 
