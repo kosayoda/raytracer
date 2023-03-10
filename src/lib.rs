@@ -10,7 +10,7 @@ mod primitive;
 
 use camera::Camera;
 pub use config::Config;
-use primitive::{Color, Ray};
+use primitive::{Color, Point, Ray};
 
 pub struct Raytracer {
     config: Config,
@@ -53,6 +53,9 @@ impl Raytracer {
     }
 
     fn ray_color(ray: Ray) -> Color {
+        if Raytracer::hit_sphere(Point::new(0.0, 0.0, -1.0), 0.5, &ray) {
+            return Color::new(1.0, 0.0, 0.0);
+        }
         let unit_direction = ray.direction().normalize();
         let t = 0.5 * (unit_direction.y + 1.0);
 
@@ -60,6 +63,18 @@ impl Raytracer {
         let white = Color::new(1.0, 1.0, 1.0) * (1.0 - t);
 
         white + blue
+    }
+
+    fn hit_sphere(center: Point, radius: f32, ray: &Ray) -> bool {
+        let oc = ray.origin() - center;
+        let direction = ray.direction();
+
+        let a = direction.dot(direction);
+        let b = 2.0 * oc.dot(direction);
+        let c = oc.dot(oc) - radius * radius;
+
+        let discriminant = b * b - 4.0 * a * c;
+        discriminant > 0.0
     }
 }
 
@@ -87,8 +102,7 @@ impl eframe::App for Raytracer {
                     fr::PixelType::U8x3,
                 );
 
-                let mut resizer =
-                    fr::Resizer::new(fr::ResizeAlg::Convolution(fr::FilterType::Lanczos3));
+                let mut resizer = fr::Resizer::new(fr::ResizeAlg::Nearest);
                 resizer
                     .resize(&image.view(), &mut resized.view_mut())
                     .unwrap();

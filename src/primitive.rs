@@ -4,7 +4,7 @@ use image::Rgb;
 pub type Vec3 = glam::Vec3;
 pub type Point = glam::Vec3;
 
-#[derive(Add, Mul)]
+#[derive(Add, Mul, Clone, Copy)]
 pub struct Color(Vec3);
 
 impl Color {
@@ -24,7 +24,7 @@ impl From<Color> for Rgb<u8> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Ray {
     origin: Point,
     direction: Vec3,
