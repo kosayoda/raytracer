@@ -1,6 +1,6 @@
 use std::{num::NonZeroU32, time::Duration};
 
-use egui::{ColorImage, TextureHandle};
+use egui::{Align2, ColorImage, TextureHandle};
 use fast_image_resize as fr;
 
 mod camera;
@@ -13,7 +13,7 @@ pub use config::Config;
 use object::Object;
 use tracer::Tracer;
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 enum AppState {
     JustStarted,
     Running,
@@ -35,7 +35,7 @@ pub struct App {
     frame_size: egui::Vec2,
     last_render_time: Duration,
     tracer: Tracer,
-    config: Config,
+    world: Vec<Object>,
     state: AppState,
 }
 
@@ -45,16 +45,16 @@ impl App {
             frame: None,
             frame_size: egui::Vec2::default(),
             last_render_time: Duration::ZERO,
-            tracer: Tracer::new(config.seed, config.image),
+            tracer: Tracer::new(config.image),
             state: AppState::JustStarted,
-            config,
+            world: config.world,
         }
     }
 
     pub fn render(&mut self) {
         self.last_render_time = {
             let now = std::time::Instant::now();
-            self.tracer.render(&self.config.world);
+            self.tracer.render(&self.world);
             now.elapsed()
         };
     }
@@ -71,23 +71,23 @@ impl App {
             }
         }
 
-        // Original sized image
-        let image = fr::Image::from_slice_u8(
-            self.config.image.width,
-            self.config.image.height,
-            &mut *self.tracer.pixels,
-            fr::PixelType::U8x3,
-        )
-        .unwrap();
-
-        // Get new image size fitting image aspect ratio
+        // Calculate new image size fitting image aspect ratio
         let (new_width, new_height) = {
-            let old_width = self.config.image.width.get() as f32;
-            let old_height = self.config.image.height.get() as f32;
+            let old_width = self.tracer.config.width.get() as f32;
+            let old_height = self.tracer.config.height.get() as f32;
             let screen_ratio = (new_frame_size.x / old_width).min(new_frame_size.y / old_height);
 
             (old_width * screen_ratio, old_height * screen_ratio)
         };
+
+        // Original sized image
+        let image = fr::Image::from_slice_u8(
+            self.tracer.config.width,
+            self.tracer.config.height,
+            self.tracer.buffer_mut(),
+            fr::PixelType::U8x3,
+        )
+        .unwrap();
 
         // Resize image
         let image_size = [new_width as _, new_height as _];
@@ -120,8 +120,26 @@ impl eframe::App for App {
             ui.heading("Settings");
             ui.separator();
 
+            egui::CollapsingHeader::new("Image").show(ui, |ui| {
+                egui::Grid::new("ImageGrid").show(ui, |ui| {
+                    ui.label("Samples Per Pixel");
+                    ui.add(egui::Slider::new(
+                        &mut self.tracer.config.samples_per_pixel,
+                        1..=100,
+                    ));
+                    ui.end_row();
+
+                    ui.label("Max Ray Depth");
+                    ui.add(egui::Slider::new(
+                        &mut self.tracer.config.max_ray_depth,
+                        1..=50,
+                    ));
+                    ui.end_row();
+                });
+            });
+
             egui::CollapsingHeader::new("Objects").show(ui, |ui| {
-                for (idx, obj) in self.config.world.iter_mut().enumerate() {
+                for (idx, obj) in self.world.iter_mut().enumerate() {
                     match obj {
                         Object::Sphere(s) => {
                             egui::Grid::new(idx.to_string()).show(ui, |ui| {
@@ -153,6 +171,25 @@ impl eframe::App for App {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
                 ui.add_space(SPACING);
                 ui.horizontal(|ui| {
+                    if ui.button("Save").clicked() {
+                        let mut dialog = rfd::FileDialog::new()
+                            .set_title("Save render to")
+                            .set_file_name("image.png");
+                        if let Ok(current_dir) = std::env::current_dir() {
+                            dialog = dialog.set_directory(current_dir);
+                        }
+                        if let Some(path) = dialog.save_file() {
+                            if let Err(e) = self.tracer.save(path) {
+                                egui::Window::new("SaveFileError")
+                                    .anchor(Align2::LEFT_TOP, [SPACING, SPACING])
+                                    .show(ctx, |ui| {
+                                        ui.heading("Error");
+                                        ui.label(format!("{e}"));
+                                    });
+                            }
+                        }
+                    }
+
                     let render_button = ui.add_enabled(
                         matches!(self.state, AppState::Paused),
                         egui::Button::new("Render"),
@@ -179,6 +216,7 @@ impl eframe::App for App {
                     "Render time: {:.2}ms",
                     self.last_render_time.as_micros() as f32 / 1000.0
                 ));
+                ui.label(format!("State: {:?}", self.state));
             })
         });
 

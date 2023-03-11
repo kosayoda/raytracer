@@ -17,9 +17,9 @@ impl Camera {
         let origin = Point::ZERO;
         let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
         let vertical = Vec3::new(0.0, viewport_height, 0.0);
+        let distance = Vec3::new(0.0, 0.0, focal_length);
 
-        let lower_left =
-            origin - horizontal / 2. - vertical / 2. - Vec3::new(0.0, 0.0, focal_length);
+        let lower_left = origin - horizontal / 2. - vertical / 2. - distance;
 
         Self {
             origin,

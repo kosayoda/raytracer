@@ -1,5 +1,7 @@
-use image::RgbImage;
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use std::path::Path;
+
+use image::{ImageResult, RgbImage};
+use rand::{rngs::ThreadRng, thread_rng, Rng};
 
 use crate::{
     camera::Camera,
@@ -9,14 +11,14 @@ use crate::{
 };
 
 pub struct Tracer {
-    config: ImageConfig,
     camera: Camera,
-    rng: SmallRng,
-    pub pixels: RgbImage,
+    rng: ThreadRng,
+    pixels: RgbImage,
+    pub config: ImageConfig,
 }
 
 impl Tracer {
-    pub fn new(seed: Option<u64>, config: ImageConfig) -> Self {
+    pub fn new(config: ImageConfig) -> Self {
         let width = config.width.get();
         let height = config.height.get();
 
@@ -26,18 +28,21 @@ impl Tracer {
             Camera::new(aspect_ratio)
         };
 
-        let rng = if let Some(seed) = seed {
-            SmallRng::seed_from_u64(seed)
-        } else {
-            SmallRng::from_entropy()
-        };
-
+        let rng = thread_rng();
         Self {
             config,
             camera,
             pixels: RgbImage::new(width, height),
             rng,
         }
+    }
+
+    pub fn save<P: AsRef<Path>>(&mut self, path: P) -> ImageResult<()> {
+        self.pixels.save(path)
+    }
+
+    pub fn buffer_mut(&mut self) -> &mut [u8] {
+        &mut self.pixels
     }
 
     pub fn render(&mut self, world: &[Object]) {
@@ -52,23 +57,31 @@ impl Tracer {
                     let v = (j as f32 + self.rng.gen::<f32>()) / (height - 1) as f32;
 
                     let ray = self.camera.get_ray(u, v);
-                    pixel_color += Tracer::ray_color(ray, world);
+                    pixel_color +=
+                        Tracer::ray_color(&mut self.rng, ray, world, self.config.max_ray_depth);
                 }
-                let pixel_color = {
+
+                let pixel = {
                     let scale = 1.0 / self.config.samples_per_pixel as f32;
-                    pixel_color * scale
+                    pixel_color.to_rgb(scale)
                 };
-                self.pixels.put_pixel(i, height - j - 1, pixel_color.into());
+                self.pixels.put_pixel(i, height - j - 1, pixel);
             }
         }
     }
 
-    fn ray_color(ray: Ray, world: &[Object]) -> Color {
-        if let Some(record) = world.hit(ray, 0.0, f32::MAX) {
-            return ((Vec3::new(1.0, 1.0, 1.0) + record.normal) * 0.5).into();
+    fn ray_color(rng: &mut ThreadRng, ray: Ray, world: &[Object], depth: i32) -> Color {
+        if depth < 0 {
+            return Color::new(0.0, 0.0, 0.0);
         }
 
-        let unit_direction = ray.direction().normalize();
+        if let Some(record) = world.hit(ray, 0.001, f32::MAX) {
+            let target = record.point + Vec3::new_random_in_hemisphere(rng, record.normal);
+            let ray = Ray::new(record.point, target - record.point);
+            return Tracer::ray_color(rng, ray, world, depth - 1) * 0.5;
+        }
+
+        let unit_direction = ray.direction().normalize_or_zero();
         let t = 0.5 * (unit_direction.y + 1.0);
 
         let blue = Color::new(0.5, 0.7, 1.0) * t;
