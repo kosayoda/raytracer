@@ -2233,6 +2233,7 @@ dependencies = [
  "image",
  "owo-colors",
  "rand",
+ "rayon",
  "rfd",
  "serde",
  "thiserror",
