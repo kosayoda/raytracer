@@ -73,22 +73,26 @@ impl Raytracer {
         let oc = ray.origin() - center;
         let direction = ray.direction();
 
-        let a = direction.dot(direction);
-        let b = 2.0 * oc.dot(direction);
-        let c = oc.dot(oc) - radius * radius;
+        let a = direction.length_squared();
+        let half_b = oc.dot(direction);
+        let c = oc.length_squared() - radius * radius;
 
-        let discriminant = b * b - 4.0 * a * c;
+        let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 {
             -1.0
         } else {
-            (-b - discriminant.sqrt()) / (2.0 * a)
+            (-half_b - discriminant.sqrt()) / a
         }
     }
 }
 
 impl eframe::App for Raytracer {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.render();
+        let render_time = {
+            let now = std::time::Instant::now();
+            self.render();
+            now.elapsed()
+        };
 
         let image = fr::Image::from_slice_u8(
             self.config.image.width,
@@ -97,6 +101,15 @@ impl eframe::App for Raytracer {
             fr::PixelType::U8x3,
         )
         .unwrap();
+
+        egui::TopBottomPanel::top("info").show(ctx, |ui| {
+            ui.horizontal_centered(|ui| {
+                ui.label(format!(
+                    "Render time: {:.2}ms",
+                    render_time.as_micros() as f32 / 1000.0
+                ));
+            })
+        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // Get available size fitting image aspect ratio
