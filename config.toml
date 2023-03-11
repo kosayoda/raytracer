@@ -9,21 +9,24 @@ Sphere.material.Lambertian.albedo = [0.8, 0.8, 0.0]
 [[world]]
 Sphere.center = [0, 0, -1.0]
 Sphere.radius = 0.5
-Sphere.material.Lambertian.albedo = [0.7, 0.3, 0.3]
+Sphere.material.Lambertian.albedo = [0.1, 0.2, 0.5]
 
 # Left
 [[world]]
 Sphere.center = [-1, 0, -1]
+Sphere.radius = -0.4
+Sphere.material.Dielectric.refractive_index = 1.5
+[[world]]
+Sphere.center = [-1, 0, -1]
 Sphere.radius = 0.5
-Sphere.material.Metal.albedo = [0.8, 0.8, 0.8]
-Sphere.material.Metal.fuzz = 0.3
+Sphere.material.Dielectric.refractive_index = 1.5
 
 # Right
 [[world]]
 Sphere.center = [1, 0, -1]
 Sphere.radius = 0.5
 Sphere.material.Metal.albedo = [0.8, 0.6, 0.2]
-Sphere.material.Metal.fuzz = 1.0
+Sphere.material.Metal.fuzz = 0.0
 
 [image]
 width = 426

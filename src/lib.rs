@@ -191,6 +191,15 @@ impl eframe::App for App {
                                                 );
                                                 ui.end_row();
                                             }
+                                            Material::Dielectric(d) => {
+                                                ui.label("Refractive index");
+                                                ui.add(
+                                                    egui::DragValue::new(&mut d.refractive_index)
+                                                        .speed(0.01)
+                                                        .clamp_range(0.0..=2.0),
+                                                );
+                                                ui.end_row();
+                                            }
                                         }
                                     });
                                 }

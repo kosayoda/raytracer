@@ -7,9 +7,11 @@ use crate::{
     primitive::{Color, Ray},
 };
 
+mod dielectric;
 mod lambertian;
 mod metal;
 
+pub use dielectric::Dielectric;
 pub use lambertian::Lambertian;
 pub use metal::Metal;
 
@@ -29,4 +31,5 @@ pub trait Scatterable {
 pub enum Material {
     Lambertian,
     Metal,
+    Dielectric,
 }
