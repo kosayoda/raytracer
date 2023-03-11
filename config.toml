@@ -12,3 +12,4 @@ Sphere.radius = 100
 [image]
 width = 426
 height = 240
+samples_per_pixel = 8

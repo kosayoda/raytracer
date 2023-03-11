@@ -14,11 +14,13 @@ use camera::Camera;
 pub use config::Config;
 use object::{Hittable, Object};
 use primitive::{Color, Ray};
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 pub struct Raytracer {
     config: Config,
     camera: Camera,
     pixels: RgbImage,
+    rng: SmallRng,
 }
 
 impl Raytracer {
@@ -32,10 +34,17 @@ impl Raytracer {
             Camera::new(aspect_ratio)
         };
 
+        let rng = if let Some(seed) = config.seed {
+            SmallRng::seed_from_u64(seed)
+        } else {
+            SmallRng::from_entropy()
+        };
+
         Self {
             config,
             camera,
             pixels: RgbImage::new(width, height),
+            rng,
         }
     }
 
@@ -45,12 +54,19 @@ impl Raytracer {
 
         for j in 0..height {
             for i in 0..width {
-                let u = i as f32 / (width - 1) as f32;
-                let v = j as f32 / (height - 1) as f32;
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                for _ in 0..self.config.image.samples_per_pixel {
+                    let u = (i as f32 + self.rng.gen::<f32>()) / (width - 1) as f32;
+                    let v = (j as f32 + self.rng.gen::<f32>()) / (height - 1) as f32;
 
-                let ray = self.camera.get_ray(u, v);
-                let color = Raytracer::ray_color(ray, &self.config.world);
-                self.pixels.put_pixel(i, height - j - 1, color.into());
+                    let ray = self.camera.get_ray(u, v);
+                    pixel_color += Raytracer::ray_color(ray, &self.config.world);
+                }
+                let pixel_color = {
+                    let scale = 1.0 / self.config.image.samples_per_pixel as f32;
+                    pixel_color * scale
+                };
+                self.pixels.put_pixel(i, height - j - 1, pixel_color.into());
             }
         }
     }

@@ -1,11 +1,11 @@
-use derive_more::{Add, From, Mul};
+use derive_more::{Add, AddAssign, From, Mul};
 use image::Rgb;
 use serde::Deserialize;
 
 pub type Vec3 = glam::Vec3;
 pub type Point = Vec3;
 
-#[derive(Add, Mul, From, Clone, Copy, Debug, Deserialize)]
+#[derive(Add, AddAssign, Mul, From, Clone, Copy, Debug, Deserialize)]
 pub struct Color(Vec3);
 
 impl Color {
@@ -18,9 +18,9 @@ impl From<Color> for Rgb<u8> {
     fn from(value: Color) -> Self {
         let f = value.0;
         Rgb([
-            (f.x * 255.0) as u8,
-            (f.y * 255.0) as u8,
-            (f.z * 255.0) as u8,
+            (f.x.clamp(0.0, 0.999) * 256.0) as u8,
+            (f.y.clamp(0.0, 0.999) * 256.0) as u8,
+            (f.z.clamp(0.0, 0.999) * 256.0) as u8,
         ])
     }
 }
