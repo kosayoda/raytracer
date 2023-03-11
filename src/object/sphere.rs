@@ -6,8 +6,8 @@ use serde::Deserialize;
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Sphere {
-    center: Point,
-    radius: f32,
+    pub center: Point,
+    pub radius: f32,
 }
 
 impl Sphere {

@@ -1,6 +1,6 @@
 use std::{num::NonZeroU32, time::Duration};
 
-use egui::{ColorImage, TextureHandle};
+use egui::{ColorImage, Slider, TextureHandle};
 use fast_image_resize as fr;
 
 mod camera;
@@ -10,6 +10,7 @@ mod primitive;
 mod tracer;
 
 pub use config::Config;
+use object::{Object, Sphere};
 use tracer::Tracer;
 
 pub struct App {
@@ -100,6 +101,44 @@ impl eframe::App for App {
                     self.last_render_time.as_micros() as f32 / 1000.0
                 ));
             })
+        });
+        egui::SidePanel::right("Settings").show(ctx, |ui| {
+            ui.heading("Settings");
+            ui.separator();
+
+            egui::CollapsingHeader::new("Objects")
+                .default_open(true)
+                .show(ui, |ui| {
+                    for (idx, obj) in self.config.world.iter_mut().enumerate() {
+                        match obj {
+                            Object::Sphere(s) => {
+                                egui::Grid::new(idx.to_string()).show(ui, |ui| {
+                                    ui.label("Center");
+                                    ui.horizontal(|ui| {
+                                        ui.add(egui::DragValue::new(&mut s.center.x).speed(0.01))
+                                            .on_hover_text("x");
+                                        ui.add(egui::DragValue::new(&mut s.center.y).speed(0.01))
+                                            .on_hover_text("y");
+                                        ui.add(egui::DragValue::new(&mut s.center.z).speed(0.01))
+                                            .on_hover_text("z");
+                                    });
+                                    ui.end_row();
+
+                                    ui.spacing();
+
+                                    ui.label("Radius");
+                                    ui.add(
+                                        egui::Slider::new(&mut s.radius, 0.0..=100.0)
+                                            .drag_value_speed(0.1),
+                                    );
+                                    ui.end_row();
+                                });
+                            }
+                        }
+
+                        ui.separator();
+                    }
+                });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
