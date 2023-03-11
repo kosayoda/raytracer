@@ -1,8 +1,33 @@
-use derive_more::{Add, AddAssign, From, Mul};
+use derive_more::{Add, AddAssign, Deref, DerefMut, Div, From, Mul, Neg, Sub};
 use image::Rgb;
 use serde::Deserialize;
 
-pub type Vec3 = glam::Vec3;
+#[derive(
+    Add,
+    AddAssign,
+    Sub,
+    Neg,
+    Mul,
+    Div,
+    Deref,
+    DerefMut,
+    From,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Deserialize,
+)]
+pub struct Vec3(glam::Vec3);
+
+impl Vec3 {
+    pub const ZERO: Vec3 = Self(glam::Vec3::ZERO);
+
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self(glam::Vec3::new(x, y, z))
+    }
+}
+
 pub type Point = Vec3;
 
 #[derive(Add, AddAssign, Mul, From, Clone, Copy, Debug, Deserialize)]
@@ -46,6 +71,6 @@ impl Ray {
 
     /// Get the point along the vector at a certain param t
     pub fn at(self, t: f32) -> Point {
-        self.origin + t * self.direction
+        self.origin + self.direction * t
     }
 }

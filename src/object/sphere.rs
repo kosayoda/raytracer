@@ -20,7 +20,7 @@ impl Hittable for Sphere {
     fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin() - self.center;
         let a = ray.direction().length_squared();
-        let h = oc.dot(ray.direction());
+        let h = oc.dot(*ray.direction());
         let c = oc.length_squared() - self.radius * self.radius;
 
         let discriminant = h * h - a * c;
@@ -51,5 +51,5 @@ impl Hittable for Sphere {
 
 #[inline]
 fn is_front_face(ray: &Ray, outward_normal: &Vec3) -> bool {
-    ray.direction().dot(*outward_normal) < 0.
+    ray.direction().dot(**outward_normal) < 0.
 }

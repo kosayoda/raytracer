@@ -1,4 +1,3 @@
-use glam::Vec3;
 use image::RgbImage;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
@@ -6,7 +5,7 @@ use crate::{
     camera::Camera,
     config::ImageConfig,
     object::{Hittable, Object},
-    primitive::{Color, Ray},
+    primitive::{Color, Ray, Vec3},
 };
 
 pub struct Tracer {

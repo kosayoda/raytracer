@@ -30,8 +30,8 @@ impl Camera {
     }
 
     pub fn get_ray(self, u: f32, v: f32) -> Ray {
-        let horizontal_offset = u * self.horizontal;
-        let vertical_offset = v * self.vertical;
+        let horizontal_offset = self.horizontal * u;
+        let vertical_offset = self.vertical * v;
         Ray::new(
             self.origin,
             self.lower_left + horizontal_offset + vertical_offset - self.origin,
