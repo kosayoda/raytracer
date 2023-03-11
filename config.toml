@@ -1,3 +1,14 @@
+
+# Sphere
+[[world]]
+Sphere.center = [0, 0, -1]
+Sphere.radius = 0.5
+
+# Ground
+[[world]]
+Sphere.center = [0, -100.5, -1]
+Sphere.radius = 100
+
 [image]
 width = 426
 height = 240

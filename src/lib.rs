@@ -7,11 +7,13 @@ use image::RgbImage;
 
 mod camera;
 mod config;
+mod object;
 mod primitive;
 
 use camera::Camera;
 pub use config::Config;
-use primitive::{Color, Point, Ray};
+use object::{Hittable, Object};
+use primitive::{Color, Ray};
 
 pub struct Raytracer {
     config: Config,
@@ -47,17 +49,15 @@ impl Raytracer {
                 let v = j as f32 / (height - 1) as f32;
 
                 let ray = self.camera.get_ray(u, v);
-                let color = Raytracer::ray_color(ray);
+                let color = Raytracer::ray_color(ray, &self.config.world);
                 self.pixels.put_pixel(i, height - j - 1, color.into());
             }
         }
     }
 
-    fn ray_color(ray: Ray) -> Color {
-        let t = Raytracer::hit_sphere(Point::new(0.0, 0.0, -1.0), 0.5, &ray);
-        if t > 0.0 {
-            let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).normalize();
-            return Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5;
+    fn ray_color(ray: Ray, world: &[Object]) -> Color {
+        if let Some(record) = world.hit(ray, 0.0, f32::MAX) {
+            return ((Vec3::new(1.0, 1.0, 1.0) + record.normal) * 0.5).into();
         }
 
         let unit_direction = ray.direction().normalize();
@@ -67,22 +67,6 @@ impl Raytracer {
         let white = Color::new(1.0, 1.0, 1.0) * (1.0 - t);
 
         white + blue
-    }
-
-    fn hit_sphere(center: Point, radius: f32, ray: &Ray) -> f32 {
-        let oc = ray.origin() - center;
-        let direction = ray.direction();
-
-        let a = direction.length_squared();
-        let half_b = oc.dot(direction);
-        let c = oc.length_squared() - radius * radius;
-
-        let discriminant = half_b * half_b - a * c;
-        if discriminant < 0.0 {
-            -1.0
-        } else {
-            (-half_b - discriminant.sqrt()) / a
-        }
     }
 }
 

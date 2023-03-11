@@ -1,14 +1,17 @@
 use std::num::NonZeroU32;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Serialize, Deserialize, Debug)]
+use crate::object::Object;
+
+#[derive(Deserialize, Debug)]
 pub struct Image {
     pub width: NonZeroU32,
     pub height: NonZeroU32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub image: Image,
+    pub world: Vec<Object>,
 }

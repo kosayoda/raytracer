@@ -1,10 +1,11 @@
-use derive_more::{Add, Mul};
+use derive_more::{Add, From, Mul};
 use image::Rgb;
+use serde::Deserialize;
 
 pub type Vec3 = glam::Vec3;
-pub type Point = glam::Vec3;
+pub type Point = Vec3;
 
-#[derive(Add, Mul, Clone, Copy)]
+#[derive(Add, Mul, From, Clone, Copy, Debug, Deserialize)]
 pub struct Color(Vec3);
 
 impl Color {
