@@ -1,4 +1,5 @@
 use crate::{
+    material::Material,
     object::{HitRecord, Hittable},
     primitive::{Point, Ray, Vec3},
 };
@@ -8,19 +9,24 @@ use serde::Deserialize;
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,
+    pub material: Material,
 }
 
 impl Sphere {
-    pub fn new(center: Point, radius: f32) -> Self {
-        Self { center, radius }
+    pub fn new(center: Point, radius: f32, material: Material) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
 impl Hittable for Sphere {
     fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let oc = ray.origin() - self.center;
-        let a = ray.direction().length_squared();
-        let h = oc.dot(*ray.direction());
+        let oc = ray.origin - self.center;
+        let a = ray.direction.length_squared();
+        let h = oc.dot(*ray.direction);
         let c = oc.length_squared() - self.radius * self.radius;
 
         let discriminant = h * h - a * c;
@@ -45,11 +51,17 @@ impl Hittable for Sphere {
         } else {
             -outward_normal
         };
-        Some(HitRecord::new(point, outward_normal, t, front_face))
+        Some(HitRecord::new(
+            point,
+            outward_normal,
+            t,
+            front_face,
+            self.material,
+        ))
     }
 }
 
 #[inline]
 fn is_front_face(ray: &Ray, outward_normal: &Vec3) -> bool {
-    ray.direction().dot(**outward_normal) < 0.
+    ray.direction.dot(**outward_normal) < 0.0
 }

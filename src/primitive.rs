@@ -1,4 +1,6 @@
-use derive_more::{Add, AddAssign, Deref, DerefMut, Div, From, Into, Mul, Neg, Sub};
+use std::ops::{Mul, MulAssign};
+
+use derive_more::{Add, AddAssign, Deref, DerefMut, Div, From, Into, Mul, MulAssign, Neg, Sub};
 use image::Rgb;
 use rand::{rngs::ThreadRng, Rng};
 use serde::Deserialize;
@@ -9,6 +11,7 @@ use serde::Deserialize;
     Sub,
     Neg,
     Mul,
+    MulAssign,
     Div,
     Deref,
     DerefMut,
@@ -56,7 +59,7 @@ impl Vec3 {
     }
 
     pub fn new_random_unit_vector(rng: &mut ThreadRng) -> Self {
-        Self(Self::new_random_in_unit_sphere(rng).normalize_or_zero())
+        Self(Self::new_random_in_unit_sphere(rng).normalize())
     }
 
     pub fn new_random_in_hemisphere(rng: &mut ThreadRng, normal: Vec3) -> Self {
@@ -71,45 +74,51 @@ impl Vec3 {
     pub fn sqrt(&self) -> Self {
         Self(glam::Vec3::new(self.x.sqrt(), self.y.sqrt(), self.z.sqrt()))
     }
-}
 
-pub type Point = Vec3;
-
-#[derive(Add, AddAssign, Mul, Deref, DerefMut, From, Into, Clone, Copy, Debug, Deserialize)]
-pub struct Color(Vec3);
-
-impl Color {
-    pub fn new(r: f32, g: f32, b: f32) -> Self {
-        Self(Vec3::new(r, g, b))
+    pub fn is_near_zero(&self) -> bool {
+        self.x.abs() < 1e-8_f32 && self.y.abs() < 1e-8_f32 && self.z.abs() < 1e-8_f32
     }
 
     pub fn to_rgb(&self, scale: f32) -> Rgb<u8> {
         let f = self.0;
         Rgb([
-            ((f.x * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8,
-            ((f.y * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8,
-            ((f.z * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8,
+            ((f.x * scale).sqrt().clamp(0.0, 0.999) * 255.999) as u8,
+            ((f.y * scale).sqrt().clamp(0.0, 0.999) * 255.999) as u8,
+            ((f.z * scale).sqrt().clamp(0.0, 0.999) * 255.999) as u8,
         ])
+    }
+
+    pub fn reflect(&self, n: &Vec3) -> Self {
+        *self - *n * 2.0 * self.dot(**n)
     }
 }
 
+impl Mul<Vec3> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        Self::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
+    }
+}
+
+impl MulAssign<Vec3> for Vec3 {
+    fn mul_assign(&mut self, rhs: Vec3) {
+        *self = *self * rhs;
+    }
+}
+
+pub type Point = Vec3;
+pub type Color = Vec3;
+
 #[derive(Clone, Copy, PartialEq)]
 pub struct Ray {
-    origin: Point,
-    direction: Vec3,
+    pub origin: Point,
+    pub direction: Vec3,
 }
 
 impl Ray {
     pub fn new(origin: Point, direction: Vec3) -> Self {
         Self { origin, direction }
-    }
-
-    pub fn origin(self) -> Point {
-        self.origin
-    }
-
-    pub fn direction(self) -> Vec3 {
-        self.direction
     }
 
     /// Get the point along the vector at a certain param t

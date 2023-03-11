@@ -4,7 +4,10 @@ mod sphere;
 use serde::Deserialize;
 pub use sphere::Sphere;
 
-use crate::primitive::{Point, Ray, Vec3};
+use crate::{
+    material::Material,
+    primitive::{Point, Ray, Vec3},
+};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct HitRecord {
@@ -12,15 +15,23 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub t: f32,
     pub is_front_face: bool,
+    pub material: Material,
 }
 
 impl HitRecord {
-    pub fn new(point: Point, normal: Vec3, t: f32, is_front_face: bool) -> Self {
+    pub fn new(
+        point: Point,
+        normal: Vec3,
+        t: f32,
+        is_front_face: bool,
+        material: Material,
+    ) -> Self {
         Self {
             point,
             normal,
             t,
             is_front_face,
+            material,
         }
     }
 }

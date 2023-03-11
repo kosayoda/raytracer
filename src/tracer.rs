@@ -7,8 +7,9 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use crate::{
     camera::Camera,
     config::ImageConfig,
+    material::Scatterable,
     object::{Hittable, Object},
-    primitive::{Color, Ray, Vec3},
+    primitive::{Color, Ray},
 };
 
 pub struct Tracer {
@@ -73,22 +74,32 @@ impl Tracer {
     }
 
     fn ray_color(rng: &mut ThreadRng, ray: Ray, world: &[Object], depth: i32) -> Color {
-        if depth < 0 {
-            return Color::new(0.0, 0.0, 0.0);
+        let mut result = Color::new(0.0, 0.0, 0.0);
+        let mut global_attenuation = Color::new(1.0, 1.0, 1.0);
+
+        let mut current_ray = ray;
+
+        let white = Color::new(1.0, 1.0, 1.0);
+        let blue = Color::new(0.5, 0.7, 1.0);
+
+        for _ in 0..depth {
+            if let Some(record) = world.hit(current_ray, 0.001, f32::MAX) {
+                if let Some(res) = record.material.scatter(rng, &current_ray, &record) {
+                    global_attenuation *= res.attenuation;
+                    current_ray = res.ray;
+                } else {
+                    break;
+                }
+            } else {
+                let unit_direction = current_ray.direction.normalize();
+                let t = 0.5 * (unit_direction.y + 1.0);
+
+                let color = white * (1.0 - t) + blue * t;
+                result += global_attenuation * color;
+                break;
+            }
         }
 
-        if let Some(record) = world.hit(ray, 0.001, f32::MAX) {
-            let target = record.point + Vec3::new_random_in_hemisphere(rng, record.normal);
-            let ray = Ray::new(record.point, target - record.point);
-            return Tracer::ray_color(rng, ray, world, depth - 1) * 0.5;
-        }
-
-        let unit_direction = ray.direction().normalize_or_zero();
-        let t = 0.5 * (unit_direction.y + 1.0);
-
-        let blue = Color::new(0.5, 0.7, 1.0) * t;
-        let white = Color::new(1.0, 1.0, 1.0) * (1.0 - t);
-
-        white + blue
+        result
     }
 }

@@ -5,6 +5,7 @@ use fast_image_resize as fr;
 
 mod camera;
 mod config;
+mod material;
 mod object;
 mod primitive;
 mod tracer;
@@ -12,6 +13,8 @@ mod tracer;
 pub use config::Config;
 use object::Object;
 use tracer::Tracer;
+
+use crate::material::Material;
 
 #[derive(Debug, PartialEq, Eq)]
 enum AppState {
@@ -139,33 +142,63 @@ impl eframe::App for App {
             });
 
             egui::CollapsingHeader::new("Objects").show(ui, |ui| {
-                for (idx, obj) in self.world.iter_mut().enumerate() {
-                    match obj {
-                        Object::Sphere(s) => {
-                            egui::Grid::new(idx.to_string()).show(ui, |ui| {
-                                ui.label("Center");
-                                ui.horizontal(|ui| {
-                                    ui.add(egui::DragValue::new(&mut s.center.x).speed(0.01))
-                                        .on_hover_text("x");
-                                    ui.add(egui::DragValue::new(&mut s.center.y).speed(0.01))
-                                        .on_hover_text("y");
-                                    ui.add(egui::DragValue::new(&mut s.center.z).speed(0.01))
-                                        .on_hover_text("z");
-                                });
-                                ui.end_row();
+                egui::ScrollArea::vertical()
+                    .max_height(ui.available_height() * 0.8)
+                    .show(ui, |ui| {
+                        for (idx, obj) in self.world.iter_mut().enumerate() {
+                            match obj {
+                                Object::Sphere(s) => {
+                                    egui::Grid::new(idx.to_string()).show(ui, |ui| {
+                                        ui.label("Center");
+                                        ui.horizontal(|ui| {
+                                            ui.add(
+                                                egui::DragValue::new(&mut s.center.x).speed(0.01),
+                                            )
+                                            .on_hover_text("x");
+                                            ui.add(
+                                                egui::DragValue::new(&mut s.center.y).speed(0.01),
+                                            )
+                                            .on_hover_text("y");
+                                            ui.add(
+                                                egui::DragValue::new(&mut s.center.z).speed(0.01),
+                                            )
+                                            .on_hover_text("z");
+                                        });
+                                        ui.end_row();
 
-                                ui.label("Radius");
-                                ui.add(
-                                    egui::Slider::new(&mut s.radius, 0.0..=100.0)
-                                        .drag_value_speed(0.1),
-                                );
-                                ui.end_row();
-                            });
+                                        ui.label("Radius");
+                                        ui.add(
+                                            egui::Slider::new(&mut s.radius, 0.0..=100.0)
+                                                .drag_value_speed(0.1),
+                                        );
+                                        ui.end_row();
+
+                                        match &mut s.material {
+                                            Material::Lambertian(l) => {
+                                                ui.label("Albedo");
+                                                ui.color_edit_button_rgb(&mut l.albedo.as_mut());
+                                                ui.end_row();
+                                            }
+                                            Material::Metal(m) => {
+                                                ui.label("Albedo");
+                                                ui.color_edit_button_rgb(&mut m.albedo.as_mut());
+                                                ui.end_row();
+                                                ui.label("Fuzz");
+                                                ui.add(
+                                                    egui::DragValue::new(&mut m.fuzz)
+                                                        .speed(0.01)
+                                                        .clamp_range(0.0..=1.0),
+                                                );
+                                                ui.end_row();
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+
+                            ui.separator();
                         }
-                    }
-
-                    ui.separator();
-                }
+                    });
             });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
