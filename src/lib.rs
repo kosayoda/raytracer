@@ -48,7 +48,7 @@ impl App {
             frame: None,
             frame_size: egui::Vec2::default(),
             last_render_time: Duration::ZERO,
-            tracer: Tracer::new(config.image),
+            tracer: Tracer::new(config.image, config.camera),
             state: AppState::JustStarted,
             world: config.world,
         }

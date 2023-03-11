@@ -6,27 +6,27 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     camera::Camera,
-    config::ImageConfig,
+    config::{CameraConfig, ImageConfig},
     material::Scatterable,
     object::{Hittable, Object},
     primitive::{Color, Ray},
 };
 
 pub struct Tracer {
-    camera: Camera,
     pixels: RgbImage,
+    pub camera: Camera,
     pub config: ImageConfig,
 }
 
 impl Tracer {
-    pub fn new(config: ImageConfig) -> Self {
+    pub fn new(config: ImageConfig, camera: CameraConfig) -> Self {
         let width = config.width.get();
         let height = config.height.get();
 
         let camera = {
             let aspect_ratio: f32 = width as f32 / height as f32;
             tracing::debug!(aspect_ratio, "Aspect ratio");
-            Camera::new(aspect_ratio)
+            Camera::new(camera, aspect_ratio)
         };
 
         Self {
@@ -59,7 +59,7 @@ impl Tracer {
                     let u = (i as f32 + rng.gen::<f32>()) / (width - 1) as f32;
                     let v = (j as f32 + rng.gen::<f32>()) / (height - 1) as f32;
 
-                    let ray = self.camera.get_ray(u, v);
+                    let ray = self.camera.get_ray(&mut rng, u, v);
                     pixel_color +=
                         Tracer::ray_color(&mut rng, ray, world, self.config.max_ray_depth);
                 }

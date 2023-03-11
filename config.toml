@@ -14,7 +14,7 @@ Sphere.material.Lambertian.albedo = [0.1, 0.2, 0.5]
 # Left
 [[world]]
 Sphere.center = [-1, 0, -1]
-Sphere.radius = -0.4
+Sphere.radius = -0.45
 Sphere.material.Dielectric.refractive_index = 1.5
 [[world]]
 Sphere.center = [-1, 0, -1]
@@ -29,7 +29,14 @@ Sphere.material.Metal.albedo = [0.8, 0.6, 0.2]
 Sphere.material.Metal.fuzz = 0.0
 
 [image]
-width = 426
+width = 400
 height = 240
 samples_per_pixel = 100
 max_ray_depth = 50
+
+[camera]
+look_from = [-2, 2, 1]
+look_to = [0, 0, -1]
+vup = [0, 1, 0]
+vfov = 20
+aperture = 0
