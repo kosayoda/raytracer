@@ -2,6 +2,7 @@ use std::num::NonZeroU32;
 
 use egui::ColorImage;
 use fast_image_resize as fr;
+use glam::Vec3;
 use image::RgbImage;
 
 mod camera;
@@ -53,9 +54,12 @@ impl Raytracer {
     }
 
     fn ray_color(ray: Ray) -> Color {
-        if Raytracer::hit_sphere(Point::new(0.0, 0.0, -1.0), 0.5, &ray) {
-            return Color::new(1.0, 0.0, 0.0);
+        let t = Raytracer::hit_sphere(Point::new(0.0, 0.0, -1.0), 0.5, &ray);
+        if t > 0.0 {
+            let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).normalize();
+            return Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5;
         }
+
         let unit_direction = ray.direction().normalize();
         let t = 0.5 * (unit_direction.y + 1.0);
 
@@ -65,7 +69,7 @@ impl Raytracer {
         white + blue
     }
 
-    fn hit_sphere(center: Point, radius: f32, ray: &Ray) -> bool {
+    fn hit_sphere(center: Point, radius: f32, ray: &Ray) -> f32 {
         let oc = ray.origin() - center;
         let direction = ray.direction();
 
@@ -74,7 +78,11 @@ impl Raytracer {
         let c = oc.dot(oc) - radius * radius;
 
         let discriminant = b * b - 4.0 * a * c;
-        discriminant > 0.0
+        if discriminant < 0.0 {
+            -1.0
+        } else {
+            (-b - discriminant.sqrt()) / (2.0 * a)
+        }
     }
 }
 
@@ -91,14 +99,18 @@ impl eframe::App for Raytracer {
         .unwrap();
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Get available size
-            let size = ui.available_size();
+            // Get available size fitting image aspect ratio
+            let screen_size = ui.available_size();
+            let screen_ratio = (screen_size.x / image.width().get() as f32)
+                .min(screen_size.y / image.height().get() as f32);
+            let width = image.width().get() as f32 * screen_ratio;
+            let height = image.height().get() as f32 * screen_ratio;
 
             // Resize image to output window
             let image = {
                 let mut resized = fr::Image::new(
-                    NonZeroU32::new(size.x as u32).unwrap(),
-                    NonZeroU32::new(size.y as u32).unwrap(),
+                    NonZeroU32::new(width as u32).unwrap(),
+                    NonZeroU32::new(height as u32).unwrap(),
                     fr::PixelType::U8x3,
                 );
 
@@ -106,14 +118,14 @@ impl eframe::App for Raytracer {
                 resizer
                     .resize(&image.view(), &mut resized.view_mut())
                     .unwrap();
-                ColorImage::from_rgb([size.x as _, size.y as _], resized.buffer())
+                ColorImage::from_rgb([width as usize, height as usize], resized.buffer())
             };
 
             // Render resized image to egui
             let texture = ui
                 .ctx()
                 .load_texture("raytracer output", image, Default::default());
-            ui.add(egui::Image::new(&texture, texture.size_vec2()));
+            ui.centered_and_justified(|ui| ui.add(egui::Image::new(&texture, texture.size_vec2())));
         });
     }
 }
