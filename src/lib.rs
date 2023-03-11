@@ -1,6 +1,6 @@
 use std::{num::NonZeroU32, time::Duration};
 
-use egui::{ColorImage, Slider, TextureHandle};
+use egui::{ColorImage, TextureHandle};
 use fast_image_resize as fr;
 
 mod camera;
@@ -10,8 +10,25 @@ mod primitive;
 mod tracer;
 
 pub use config::Config;
-use object::{Object, Sphere};
+use object::Object;
 use tracer::Tracer;
+
+#[derive(PartialEq, Eq)]
+enum AppState {
+    JustStarted,
+    Running,
+    Paused,
+}
+
+impl AppState {
+    fn to_button_str(&self) -> &'static str {
+        match self {
+            AppState::JustStarted => "Run",
+            AppState::Running => "Pause",
+            AppState::Paused => "Run",
+        }
+    }
+}
 
 pub struct App {
     frame: Option<TextureHandle>,
@@ -19,6 +36,7 @@ pub struct App {
     last_render_time: Duration,
     tracer: Tracer,
     config: Config,
+    state: AppState,
 }
 
 impl App {
@@ -28,6 +46,7 @@ impl App {
             frame_size: egui::Vec2::default(),
             last_render_time: Duration::ZERO,
             tracer: Tracer::new(config.seed, config.image),
+            state: AppState::JustStarted,
             config,
         }
     }
@@ -94,56 +113,87 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("info").show(ctx, |ui| {
-            ui.horizontal_centered(|ui| {
+        const SPACING: f32 = 10.0;
+
+        egui::SidePanel::right("Settings").show(ctx, |ui| {
+            ui.add_space(SPACING);
+            ui.heading("Settings");
+            ui.separator();
+
+            egui::CollapsingHeader::new("Objects").show(ui, |ui| {
+                for (idx, obj) in self.config.world.iter_mut().enumerate() {
+                    match obj {
+                        Object::Sphere(s) => {
+                            egui::Grid::new(idx.to_string()).show(ui, |ui| {
+                                ui.label("Center");
+                                ui.horizontal(|ui| {
+                                    ui.add(egui::DragValue::new(&mut s.center.x).speed(0.01))
+                                        .on_hover_text("x");
+                                    ui.add(egui::DragValue::new(&mut s.center.y).speed(0.01))
+                                        .on_hover_text("y");
+                                    ui.add(egui::DragValue::new(&mut s.center.z).speed(0.01))
+                                        .on_hover_text("z");
+                                });
+                                ui.end_row();
+
+                                ui.label("Radius");
+                                ui.add(
+                                    egui::Slider::new(&mut s.radius, 0.0..=100.0)
+                                        .drag_value_speed(0.1),
+                                );
+                                ui.end_row();
+                            });
+                        }
+                    }
+
+                    ui.separator();
+                }
+            });
+
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
+                ui.add_space(SPACING);
+                ui.horizontal(|ui| {
+                    let render_button = ui.add_enabled(
+                        matches!(self.state, AppState::Paused),
+                        egui::Button::new("Render"),
+                    );
+                    if render_button.clicked() {
+                        self.render();
+                    }
+
+                    if ui.button(self.state.to_button_str()).clicked() {
+                        match self.state {
+                            AppState::JustStarted | AppState::Paused => {
+                                self.state = AppState::Running
+                            }
+                            AppState::Running => self.state = AppState::Paused,
+                        }
+                    }
+                });
+            });
+        });
+
+        egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
                 ui.label(format!(
                     "Render time: {:.2}ms",
                     self.last_render_time.as_micros() as f32 / 1000.0
                 ));
             })
         });
-        egui::SidePanel::right("Settings").show(ctx, |ui| {
-            ui.heading("Settings");
-            ui.separator();
-
-            egui::CollapsingHeader::new("Objects")
-                .default_open(true)
-                .show(ui, |ui| {
-                    for (idx, obj) in self.config.world.iter_mut().enumerate() {
-                        match obj {
-                            Object::Sphere(s) => {
-                                egui::Grid::new(idx.to_string()).show(ui, |ui| {
-                                    ui.label("Center");
-                                    ui.horizontal(|ui| {
-                                        ui.add(egui::DragValue::new(&mut s.center.x).speed(0.01))
-                                            .on_hover_text("x");
-                                        ui.add(egui::DragValue::new(&mut s.center.y).speed(0.01))
-                                            .on_hover_text("y");
-                                        ui.add(egui::DragValue::new(&mut s.center.z).speed(0.01))
-                                            .on_hover_text("z");
-                                    });
-                                    ui.end_row();
-
-                                    ui.spacing();
-
-                                    ui.label("Radius");
-                                    ui.add(
-                                        egui::Slider::new(&mut s.radius, 0.0..=100.0)
-                                            .drag_value_speed(0.1),
-                                    );
-                                    ui.end_row();
-                                });
-                            }
-                        }
-
-                        ui.separator();
-                    }
-                });
-        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // Render image
-            self.render();
+            match self.state {
+                AppState::JustStarted => {
+                    self.render();
+                    self.state = AppState::Paused;
+                }
+                AppState::Running => {
+                    self.render();
+                }
+                AppState::Paused => (),
+            }
 
             // Display resized image to egui frame
             let frame = self.resize_to_frame(ui);
