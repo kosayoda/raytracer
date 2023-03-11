@@ -4,8 +4,8 @@ use serde::Deserialize;
 
 use crate::object::Object;
 
-#[derive(Deserialize, Debug)]
-pub struct Image {
+#[derive(Deserialize, Debug, Clone, Copy)]
+pub struct ImageConfig {
     pub width: NonZeroU32,
     pub height: NonZeroU32,
     pub samples_per_pixel: usize,
@@ -13,7 +13,7 @@ pub struct Image {
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    pub image: Image,
+    pub image: ImageConfig,
     pub world: Vec<Object>,
     pub seed: Option<u64>,
 }

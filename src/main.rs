@@ -1,7 +1,7 @@
 use clap::{arg, value_parser, Command};
 use color_eyre::Result;
 
-use raytracing::{Config, Raytracer};
+use raytracing::{App, Config};
 
 fn main() -> Result<()> {
     setup()?;
@@ -24,7 +24,7 @@ fn main() -> Result<()> {
     eframe::run_native(
         "raytracing",
         options,
-        Box::new(|_cc| Box::new(Raytracer::new(config))),
+        Box::new(|_cc| Box::new(App::new(config))),
     )
     .unwrap();
 
