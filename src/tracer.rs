@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use image::{buffer::EnumeratePixelsMut, ImageResult, Rgb, RgbImage};
+use image::{ImageResult, RgbImage};
 use rand::{rngs::ThreadRng, thread_rng, Rng};
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 use crate::{
     camera::Camera,
@@ -48,29 +48,31 @@ impl Tracer {
         let width = self.config.width.get();
         let height = self.config.height.get();
 
-        let rows: Vec<(u32, EnumeratePixelsMut<Rgb<u8>>)> =
-            self.pixels.enumerate_rows_mut().collect();
-        rows.into_par_iter().for_each(|(j, row)| {
-            let j = height - j - 1;
-            let mut rng = thread_rng();
-            row.enumerate().for_each(|(i, pixel)| {
-                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-                for _ in 0..self.config.samples_per_pixel {
-                    let u = (i as f32 + rng.gen::<f32>()) / (width - 1) as f32;
-                    let v = (j as f32 + rng.gen::<f32>()) / (height - 1) as f32;
+        self.pixels
+            .enumerate_rows_mut()
+            .into_iter()
+            .par_bridge()
+            .for_each(|(j, row)| {
+                let j = height - j - 1;
+                let mut rng = thread_rng();
+                row.enumerate().for_each(|(i, pixel)| {
+                    let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                    for _ in 0..self.config.samples_per_pixel {
+                        let u = (i as f32 + rng.gen::<f32>()) / (width - 1) as f32;
+                        let v = (j as f32 + rng.gen::<f32>()) / (height - 1) as f32;
 
-                    let ray = self.camera.get_ray(&mut rng, u, v);
-                    pixel_color +=
-                        Tracer::ray_color(&mut rng, ray, world, self.config.max_ray_depth);
-                }
+                        let ray = self.camera.get_ray(&mut rng, u, v);
+                        pixel_color +=
+                            Tracer::ray_color(&mut rng, ray, world, self.config.max_ray_depth);
+                    }
 
-                let color = {
-                    let scale = 1.0 / self.config.samples_per_pixel as f32;
-                    pixel_color.to_rgb(scale)
-                };
-                *pixel.2 = color;
+                    let color = {
+                        let scale = 1.0 / self.config.samples_per_pixel as f32;
+                        pixel_color.to_rgb(scale)
+                    };
+                    *pixel.2 = color;
+                });
             });
-        });
     }
 
     fn ray_color(rng: &mut ThreadRng, ray: Ray, world: &[Object], depth: i32) -> Color {
