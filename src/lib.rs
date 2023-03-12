@@ -16,19 +16,25 @@ use tracer::Tracer;
 
 use crate::material::Material;
 
+#[derive(Clone, Copy)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 enum AppState {
-    JustStarted,
     Running,
+    Moving,
     Paused,
 }
 
 impl AppState {
     fn to_button_str(&self) -> &'static str {
         match self {
-            AppState::JustStarted => "Run",
             AppState::Running => "Pause",
             AppState::Paused => "Run",
+            AppState::Moving => "Run",
         }
     }
 }
@@ -39,19 +45,27 @@ pub struct App {
     last_render_time: Duration,
     tracer: Tracer,
     world: Vec<Object>,
+
+    // UI state
     state: AppState,
+    locked_pos: Option<Point>,
+    skip_mouse_update: bool,
 }
 
 impl App {
     pub fn new(config: Config) -> Self {
-        Self {
+        let mut slf = Self {
             frame: None,
             frame_size: egui::Vec2::default(),
             last_render_time: Duration::ZERO,
             tracer: Tracer::new(config.image, config.camera),
-            state: AppState::JustStarted,
+            state: AppState::Paused,
             world: config.world,
-        }
+            locked_pos: None,
+            skip_mouse_update: false,
+        };
+        slf.render();
+        slf
     }
 
     pub fn render(&mut self) {
@@ -265,12 +279,21 @@ impl eframe::App for App {
                         self.render();
                     }
 
-                    if ui.button(self.state.to_button_str()).clicked() {
+                    let run_button = ui.add_enabled(
+                        !matches!(self.state, AppState::Moving),
+                        egui::Button::new(self.state.to_button_str()),
+                    );
+                    if run_button.clicked() {
                         match self.state {
-                            AppState::JustStarted | AppState::Paused => {
-                                self.state = AppState::Running
+                            AppState::Paused => {
+                                self.tracer.spp = 8;
+                                self.state = AppState::Running;
                             }
-                            AppState::Running => self.state = AppState::Paused,
+                            AppState::Running => {
+                                self.tracer.spp = self.tracer.config.samples_per_pixel;
+                                self.state = AppState::Paused;
+                            }
+                            _ => unreachable!(),
                         }
                     }
                 });
@@ -290,29 +313,48 @@ impl eframe::App for App {
         egui::CentralPanel::default().show(ctx, |ui| {
             // Render image
             match self.state {
-                AppState::JustStarted => {
-                    self.render();
-                    self.state = AppState::Paused;
-                }
                 AppState::Running => {
-                    // if ctx.input(|i| i.pointer.primary_down()) {
-                    //     ctx.set_cursor_icon(egui::CursorIcon::None);
-                    //
-                    //     let old_spp = self.tracer.config.samples_per_pixel;
-                    //     self.tracer.config.samples_per_pixel = 8;
-                    //
-                    //     if ctx.input(|i| i.key_down(egui::Key::D)) {
-                    //         self.tracer.camera.move_right();
-                    //     }
-                    //
-                    //     self.render();
-                    //
-                    //     self.tracer.config.samples_per_pixel = old_spp;
-                    // } else {
                     self.render();
-                    // }
                 }
-                AppState::Paused => (),
+                AppState::Moving => {
+                    // Hide cursor if in window
+                    let rect = ctx.available_rect();
+                    ctx.set_cursor_icon(egui::CursorIcon::None);
+                    if ui.rect_contains_pointer(rect.shrink(80.0)) {
+                        ctx.input(|i| {
+                            self.tracer
+                                .camera
+                                .move_camera(i, &mut self.skip_mouse_update)
+                        });
+                        if ctx.input(|i| {
+                            i.pointer.primary_released() || i.key_released(egui::Key::Escape)
+                        }) {
+                            self.state = AppState::Paused;
+                            self.tracer.spp = self.tracer.config.samples_per_pixel;
+                        }
+                    } else {
+                        let mouse = mouse_rs::Mouse::new();
+                        let point = self.locked_pos.unwrap();
+                        mouse.move_to(point.x, point.y).ok();
+                        self.skip_mouse_update = true;
+                    }
+                    self.render();
+                }
+                AppState::Paused => {
+                    if ui.rect_contains_pointer(ctx.available_rect()) {
+                        if ctx.input(|i| i.pointer.primary_released()) {
+                            let mouse = mouse_rs::Mouse::new();
+                            let position = mouse.get_position().unwrap();
+                            self.locked_pos = Some(Point {
+                                x: position.x,
+                                y: position.y,
+                            });
+                            self.state = AppState::Moving;
+                            self.skip_mouse_update = false;
+                            self.tracer.spp = 8;
+                        }
+                    }
+                }
             }
 
             // Display resized image to egui frame

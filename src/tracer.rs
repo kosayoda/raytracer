@@ -16,6 +16,8 @@ pub struct Tracer {
     pixels: RgbImage,
     pub camera: Camera,
     pub config: ImageConfig,
+
+    pub spp: usize,
 }
 
 impl Tracer {
@@ -33,6 +35,7 @@ impl Tracer {
             config,
             camera,
             pixels: RgbImage::new(width, height),
+            spp: config.samples_per_pixel,
         }
     }
 
@@ -57,7 +60,7 @@ impl Tracer {
                 let mut rng = thread_rng();
                 row.enumerate().for_each(|(i, pixel)| {
                     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-                    for _ in 0..self.config.samples_per_pixel {
+                    for _ in 0..self.spp {
                         let u = (i as f32 + rng.gen::<f32>()) / (width - 1) as f32;
                         let v = (j as f32 + rng.gen::<f32>()) / (height - 1) as f32;
 
@@ -67,7 +70,7 @@ impl Tracer {
                     }
 
                     let color = {
-                        let scale = 1.0 / self.config.samples_per_pixel as f32;
+                        let scale = 1.0 / self.spp as f32;
                         pixel_color.to_rgb(scale)
                     };
                     *pixel.2 = color;

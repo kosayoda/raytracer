@@ -38,4 +38,4 @@ max_ray_depth = 50
 look_from = [3, 3, 2]
 look_to = [0, 0, -1]
 vertical_fov = 20
-aperture = 2
+aperture = 0

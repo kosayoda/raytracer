@@ -36,6 +36,7 @@ enum_dispatch = "0.3.11"
 rand = { version = "0.8.5", features = ["small_rng"] }
 rfd = "0.11.2"
 rayon = "1.7.0"
+mouse-rs = "0.4.2"
 
 # Build `backtrace` with optimizations for `color-eyre` performance
 [profile.dev.package.backtrace]
