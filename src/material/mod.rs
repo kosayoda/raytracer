@@ -1,6 +1,6 @@
 use enum_dispatch::enum_dispatch;
 use rand::rngs::ThreadRng;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     object::HitRecord,
@@ -27,7 +27,7 @@ pub trait Scatterable {
 }
 
 #[enum_dispatch(Scatterable)]
-#[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
 pub enum Material {
     Lambertian,
     Metal,

@@ -3,9 +3,9 @@ use crate::{
     object::{HitRecord, Hittable},
     primitive::{Point, Ray, Vec3},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,

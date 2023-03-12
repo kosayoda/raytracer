@@ -1,7 +1,7 @@
 use enum_dispatch::enum_dispatch;
 
 mod sphere;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 pub use sphere::Sphere;
 
 use crate::{
@@ -42,7 +42,7 @@ pub trait Hittable {
 }
 
 #[enum_dispatch(Hittable)]
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub enum Object {
     Sphere,
 }

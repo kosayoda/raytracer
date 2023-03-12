@@ -8,6 +8,7 @@ mod config;
 mod material;
 mod object;
 mod primitive;
+pub mod scenes;
 mod tracer;
 
 pub use config::Config;

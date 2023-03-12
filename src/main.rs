@@ -10,14 +10,31 @@ fn main() -> Result<()> {
     let config: Config = {
         let matches = Command::new("raytracer")
             .arg(
-                arg!(<config> "The raytracer configuration")
+                arg!(--config <config> "A scene configuration.")
                     .value_parser(value_parser!(std::path::PathBuf)),
+            )
+            .arg(
+                arg!(--scene <scene> "A builtin scene.")
+                    .value_parser(clap::builder::PossibleValuesParser::new(["rtiow_final"])),
+            )
+            .group(
+                clap::ArgGroup::new("scenes")
+                    .args(["config", "scene"])
+                    .required(true),
             )
             .get_matches();
 
-        let mut config = matches.get_one::<std::path::PathBuf>("config").unwrap();
-        let config = std::fs::read_to_string(&mut config)?;
-        toml::from_str(&config)?
+        if let Some(config) = matches.get_one::<std::path::PathBuf>("config") {
+            let config = std::fs::read_to_string(config)?;
+            toml::from_str(&config)?
+        } else if let Some(config) = matches.get_one::<String>("scene") {
+            match config.as_str() {
+                "rtiow_final" => raytracing::scenes::rtiow::final_scene(),
+                _ => unreachable!(),
+            }
+        } else {
+            panic!("clap error");
+        }
     };
 
     let options = eframe::NativeOptions::default();

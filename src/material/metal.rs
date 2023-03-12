@@ -1,5 +1,5 @@
 use rand::rngs::ThreadRng;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     object::HitRecord,
@@ -8,7 +8,7 @@ use crate::{
 
 use super::{ScatterResult, Scatterable};
 
-#[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
 pub struct Metal {
     pub albedo: Color,
     pub fuzz: f32,

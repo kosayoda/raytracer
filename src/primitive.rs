@@ -5,7 +5,7 @@ use derive_more::{
 };
 use image::Rgb;
 use rand::{rngs::ThreadRng, Rng};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(
     Add,
@@ -25,6 +25,7 @@ use serde::Deserialize;
     Debug,
     PartialEq,
     Deserialize,
+    Serialize,
 )]
 pub struct Vec3(glam::Vec3);
 

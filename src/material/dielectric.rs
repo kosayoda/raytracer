@@ -1,5 +1,5 @@
 use rand::{rngs::ThreadRng, Rng};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     object::HitRecord,
@@ -15,7 +15,7 @@ fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
     r0 + (1. - r0) * (1. - cosine).powi(5)
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
 pub struct Dielectric {
     pub refractive_index: f32,
 }
