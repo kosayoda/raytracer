@@ -6,72 +6,68 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct CameraBasis {
-    u: Vec3,
-    v: Vec3,
-    w: Vec3,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Camera {
+    viewport: (f32, f32),
+
     origin: Point,
-    lower_left: Point,
+    direction: Vec3,
 
-    horizontal: Vec3,
-    vertical: Vec3,
+    pub aperture: f32,
+    pub focus_dist: f32,
 
-    basis: CameraBasis,
-    lens_radius: f32,
-
-    config: CameraConfig,
+    pub config: CameraConfig,
 }
 
 impl Camera {
-    pub fn new(config: CameraConfig, aspect_ratio: f32) -> Self {
-        let viewport_height = 2.0 * (config.vfov.to_radians() / 2.0).tan();
-        let viewport_width = aspect_ratio * viewport_height;
+    const UP: Vec3 = Vec3::new(0.0, 1.0, 0.0);
 
-        let basis = {
-            let vup = config.vup;
-            let w = (config.look_from - config.look_to).normalize();
-            let u = vup.cross(w).normalize();
-            let v = w.cross(u);
-            CameraBasis {
-                u: u.into(),
-                v: v.into(),
-                w: w.into(),
-            }
+    pub fn new(mut config: CameraConfig, aspect_ratio: f32) -> Self {
+        let CameraConfig {
+            look_from: origin,
+            look_to: center,
+            vertical_fov,
+            aperture,
+            focus_dist,
+        } = config;
+
+        let viewport = {
+            let viewport_height = 2.0 * (vertical_fov.to_radians() / 2.0).tan();
+            let viewport_width = aspect_ratio * viewport_height;
+            (viewport_width, viewport_height)
         };
 
-        let focus_dist = (config.look_from - config.look_to).length();
-
-        let origin = config.look_from;
-        let horizontal = basis.u * focus_dist * viewport_width;
-        let vertical = basis.v * focus_dist * viewport_height;
-
-        let lower_left = origin - horizontal / 2. - vertical / 2. - basis.w * focus_dist;
-        let lens_radius = config.aperture / 2.0;
+        let oc = origin - center;
+        let direction: Vec3 = oc.normalize().into();
+        let focus_dist = focus_dist.unwrap_or_else(|| oc.length());
+        config.focus_dist = Some(focus_dist);
 
         Self {
+            viewport,
             origin,
-            lower_left,
-            horizontal,
-            vertical,
-            basis,
-            lens_radius,
+            direction,
+            aperture,
+            focus_dist,
             config,
         }
     }
 
-    pub fn get_ray(self, rng: &mut ThreadRng, u: f32, v: f32) -> Ray {
-        let rd = Vec3::new_random_in_unit_disk(rng) * self.lens_radius;
-        let offset = self.basis.u * rd.x + self.basis.v * rd.y;
+    pub fn get_ray(self, rng: &mut ThreadRng, s: f32, t: f32) -> Ray {
+        let u = Camera::UP.cross(*self.direction).normalize();
+        let v = self.direction.cross(u);
+        let offset = {
+            let rd = Vec3::new_random_in_unit_disk(rng) * self.aperture / 2.0;
+            (u * rd.x + v * rd.y).into()
+        };
 
-        let horizontal_offset = self.horizontal * u;
-        let vertical_offset = self.vertical * v;
+        let horizontal: Vec3 = (u * self.focus_dist * self.viewport.0).into();
+        let vertical: Vec3 = (v * self.focus_dist * self.viewport.1).into();
+
+        let lower_left =
+            self.origin - horizontal / 2.0 - vertical / 2.0 - self.direction * self.focus_dist;
+
         Ray::new(
             self.origin + offset,
-            self.lower_left + horizontal_offset + vertical_offset - self.origin - offset,
+            lower_left + horizontal * s + vertical * t - self.origin - offset,
         )
     }
 }

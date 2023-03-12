@@ -2,10 +2,7 @@ use std::num::NonZeroU32;
 
 use serde::Deserialize;
 
-use crate::{
-    object::Object,
-    primitive::{Point, Vec3},
-};
+use crate::{object::Object, primitive::Point};
 
 #[derive(Deserialize, Debug, Clone, Copy)]
 pub struct ImageConfig {
@@ -19,9 +16,9 @@ pub struct ImageConfig {
 pub struct CameraConfig {
     pub look_from: Point,
     pub look_to: Point,
-    pub vup: Vec3,
-    pub vfov: f32,
+    pub vertical_fov: f32,
     pub aperture: f32,
+    pub focus_dist: Option<f32>,
 }
 
 #[derive(Deserialize, Debug)]

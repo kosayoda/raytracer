@@ -1,6 +1,8 @@
 use std::ops::{Mul, MulAssign};
 
-use derive_more::{Add, AddAssign, Deref, DerefMut, Div, From, Into, Mul, MulAssign, Neg, Sub};
+use derive_more::{
+    Add, AddAssign, Deref, DerefMut, Div, From, Into, Mul, MulAssign, Neg, Sub, SubAssign,
+};
 use image::Rgb;
 use rand::{rngs::ThreadRng, Rng};
 use serde::Deserialize;
@@ -9,6 +11,7 @@ use serde::Deserialize;
     Add,
     AddAssign,
     Sub,
+    SubAssign,
     Neg,
     Mul,
     MulAssign,
@@ -28,7 +31,7 @@ pub struct Vec3(glam::Vec3);
 impl Vec3 {
     pub const ZERO: Vec3 = Self(glam::Vec3::ZERO);
 
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Self(glam::Vec3::new(x, y, z))
     }
 

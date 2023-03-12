@@ -29,14 +29,13 @@ Sphere.material.Metal.albedo = [0.8, 0.6, 0.2]
 Sphere.material.Metal.fuzz = 0.0
 
 [image]
-width = 400
+width = 426
 height = 240
 samples_per_pixel = 100
 max_ray_depth = 50
 
 [camera]
-look_from = [-2, 2, 1]
+look_from = [3, 3, 2]
 look_to = [0, 0, -1]
-vup = [0, 1, 0]
-vfov = 20
-aperture = 0
+vertical_fov = 20
+aperture = 2

@@ -141,6 +141,31 @@ impl eframe::App for App {
                 });
             });
 
+            egui::CollapsingHeader::new("Camera").show(ui, |ui| {
+                egui::Grid::new("CameraGrid").show(ui, |ui| {
+                    ui.label("Focal length");
+                    let fd = self.tracer.camera.config.focus_dist.unwrap();
+                    ui.add(
+                        egui::Slider::new(
+                            &mut self.tracer.camera.focus_dist,
+                            (fd * 0.5)..=(fd * 2.0),
+                        )
+                        .drag_value_speed(0.001)
+                        .fixed_decimals(3)
+                        .step_by(0.001),
+                    );
+                    ui.end_row();
+
+                    ui.label("Aperture");
+                    ui.add(
+                        egui::Slider::new(&mut self.tracer.camera.aperture, 0.0..=4.0)
+                            .drag_value_speed(0.01)
+                            .step_by(0.01),
+                    );
+                    ui.end_row();
+                });
+            });
+
             egui::CollapsingHeader::new("Objects").show(ui, |ui| {
                 egui::ScrollArea::vertical()
                     .max_height(ui.available_height() * 0.8)
@@ -270,7 +295,22 @@ impl eframe::App for App {
                     self.state = AppState::Paused;
                 }
                 AppState::Running => {
+                    // if ctx.input(|i| i.pointer.primary_down()) {
+                    //     ctx.set_cursor_icon(egui::CursorIcon::None);
+                    //
+                    //     let old_spp = self.tracer.config.samples_per_pixel;
+                    //     self.tracer.config.samples_per_pixel = 8;
+                    //
+                    //     if ctx.input(|i| i.key_down(egui::Key::D)) {
+                    //         self.tracer.camera.move_right();
+                    //     }
+                    //
+                    //     self.render();
+                    //
+                    //     self.tracer.config.samples_per_pixel = old_spp;
+                    // } else {
                     self.render();
+                    // }
                 }
                 AppState::Paused => (),
             }
