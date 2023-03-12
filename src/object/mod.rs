@@ -1,7 +1,9 @@
-use enum_dispatch::enum_dispatch;
-
-mod sphere;
+use derive_more::From;
 use serde::{Deserialize, Serialize};
+
+mod aabb;
+mod sphere;
+
 pub use sphere::Sphere;
 
 use crate::{
@@ -36,41 +38,27 @@ impl HitRecord {
     }
 }
 
-#[enum_dispatch]
 pub trait Hittable {
     fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
-#[enum_dispatch(Hittable)]
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize, From)]
 pub enum Object {
-    Sphere,
+    Sphere(Sphere),
 }
 
-impl Hittable for Vec<Object> {
+impl Hittable for &[Object] {
     fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut closest_hit = None;
         let mut closest_so_far = t_max;
 
-        for hittable in self {
-            // If we hit something
-            if let Some(h) = hittable.hit(ray, t_min, closest_so_far) {
-                closest_hit = Some(h);
-                closest_so_far = h.t;
-            }
-        }
-        closest_hit
-    }
-}
+        for hittable in self.iter() {
+            let hit = match hittable {
+                Object::Sphere(s) => sphere::hit(s, ray, t_min, closest_so_far),
+            };
 
-impl Hittable for [Object] {
-    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let mut closest_hit = None;
-        let mut closest_so_far = t_max;
-
-        for hittable in self {
             // If we hit something
-            if let Some(h) = hittable.hit(ray, t_min, closest_so_far) {
+            if let Some(h) = hit {
                 closest_hit = Some(h);
                 closest_so_far = h.t;
             }

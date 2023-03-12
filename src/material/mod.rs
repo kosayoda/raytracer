@@ -1,4 +1,4 @@
-use enum_dispatch::enum_dispatch;
+use derive_more::From;
 use rand::rngs::ThreadRng;
 use serde::{Deserialize, Serialize};
 
@@ -20,16 +20,24 @@ pub struct ScatterResult {
     pub ray: Ray,
 }
 
-#[enum_dispatch]
-pub trait Scatterable {
-    fn scatter(&self, rng: &mut ThreadRng, r_in: &Ray, record: &HitRecord)
-        -> Option<ScatterResult>;
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize, From)]
+pub enum Material {
+    Lambertian(Lambertian),
+    Metal(Metal),
+    Dielectric(Dielectric),
 }
 
-#[enum_dispatch(Scatterable)]
-#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
-pub enum Material {
-    Lambertian,
-    Metal,
-    Dielectric,
+impl Material {
+    pub fn scatter(
+        &self,
+        rng: &mut ThreadRng,
+        r_in: &Ray,
+        record: &HitRecord,
+    ) -> Option<ScatterResult> {
+        match self {
+            Material::Lambertian(l) => lambertian::scatter(l, rng, r_in, record),
+            Material::Metal(m) => metal::scatter(m, rng, r_in, record),
+            Material::Dielectric(d) => dielectric::scatter(d, rng, r_in, record),
+        }
+    }
 }

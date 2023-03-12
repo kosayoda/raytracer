@@ -6,7 +6,7 @@ use crate::{
     primitive::{Color, Ray, Vec3},
 };
 
-use super::{ScatterResult, Scatterable};
+use super::ScatterResult;
 
 #[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
 pub struct Metal {
@@ -14,26 +14,24 @@ pub struct Metal {
     pub fuzz: f32,
 }
 
-impl Scatterable for Metal {
-    fn scatter(
-        &self,
-        rng: &mut ThreadRng,
-        r_in: &Ray,
-        record: &HitRecord,
-    ) -> Option<ScatterResult> {
-        let reflected = Vec3::from(r_in.direction.normalize()).reflect(&record.normal);
-        let scattered = Ray::new(
-            record.point,
-            Vec3::new_random_in_unit_sphere(rng) * self.fuzz + reflected.into(),
-        );
+pub fn scatter(
+    material: &Metal,
+    rng: &mut ThreadRng,
+    r_in: &Ray,
+    record: &HitRecord,
+) -> Option<ScatterResult> {
+    let reflected = Vec3::from(r_in.direction.normalize()).reflect(&record.normal);
+    let scattered = Ray::new(
+        record.point,
+        Vec3::new_random_in_unit_sphere(rng) * material.fuzz + reflected.into(),
+    );
 
-        if scattered.direction.dot(*record.normal) > 0. {
-            Some(ScatterResult {
-                ray: scattered,
-                attenuation: self.albedo,
-            })
-        } else {
-            None
-        }
+    if scattered.direction.dot(*record.normal) > 0. {
+        Some(ScatterResult {
+            ray: scattered,
+            attenuation: material.albedo,
+        })
+    } else {
+        None
     }
 }

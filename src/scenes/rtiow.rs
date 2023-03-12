@@ -92,7 +92,7 @@ pub fn final_scene() -> Config {
         image: ImageConfig {
             width: NonZeroU32::new(1200).unwrap(),
             height: NonZeroU32::new(800).unwrap(),
-            samples_per_pixel: 500,
+            samples_per_pixel: 10,
             max_ray_depth: 50,
         },
         world,

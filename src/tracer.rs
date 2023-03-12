@@ -1,19 +1,18 @@
 use std::path::Path;
 
-use image::{ImageResult, RgbImage};
+use image::ImageResult;
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 use crate::{
     camera::Camera,
     config::{CameraConfig, ImageConfig},
-    material::Scatterable,
     object::{Hittable, Object},
     primitive::{Color, Ray},
 };
 
 pub struct Tracer {
-    pixels: RgbImage,
+    pixels: Vec<u8>,
     pub camera: Camera,
     pub config: ImageConfig,
 
@@ -22,8 +21,8 @@ pub struct Tracer {
 
 impl Tracer {
     pub fn new(config: ImageConfig, camera: CameraConfig) -> Self {
-        let width = config.width.get();
-        let height = config.height.get();
+        let width = config.width.get() as usize;
+        let height = config.height.get() as usize;
 
         let camera = {
             let aspect_ratio: f32 = width as f32 / height as f32;
@@ -34,13 +33,19 @@ impl Tracer {
         Self {
             config,
             camera,
-            pixels: RgbImage::new(width, height),
+            pixels: vec![0; width * height * 3],
             spp: config.samples_per_pixel,
         }
     }
 
     pub fn save<P: AsRef<Path>>(&mut self, path: P) -> ImageResult<()> {
-        self.pixels.save(path)
+        let image = image::ImageBuffer::<image::Rgb<u8>, &[u8]>::from_raw(
+            self.config.width.get(),
+            self.config.height.get(),
+            &self.pixels,
+        )
+        .expect("invalid pixel buffer");
+        image.save(path)
     }
 
     pub fn buffer_mut(&mut self) -> &mut [u8] {
@@ -48,17 +53,20 @@ impl Tracer {
     }
 
     pub fn render(&mut self, world: &[Object]) {
-        let width = self.config.width.get();
-        let height = self.config.height.get();
+        let width = self.config.width.get() as usize;
+        let height = self.config.height.get() as usize;
 
         self.pixels
-            .enumerate_rows_mut()
+            .chunks_exact_mut(width as usize * 3)
+            .enumerate()
             .into_iter()
             .par_bridge()
             .for_each(|(j, row)| {
                 let j = height - j - 1;
+                let mut row_idx = 0;
+
                 let mut rng = thread_rng();
-                row.enumerate().for_each(|(i, pixel)| {
+                (0..width).for_each(|i| {
                     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                     for _ in 0..self.spp {
                         let u = (i as f32 + rng.gen::<f32>()) / (width - 1) as f32;
@@ -73,7 +81,8 @@ impl Tracer {
                         let scale = 1.0 / self.spp as f32;
                         pixel_color.to_rgb(scale)
                     };
-                    *pixel.2 = color;
+                    row[row_idx..(row_idx + 3)].copy_from_slice(&color);
+                    row_idx += 3;
                 });
             });
     }

@@ -30,12 +30,13 @@ tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter", "time"] }
 # For easier newtype wrappers
 derive_more = "0.99.17"
-# For improving dynamic dispatch performance
-enum_dispatch = "0.3.11"
 # For random sampling
 rand = { version = "0.8.5", features = ["small_rng"] }
+# For file picking
 rfd = "0.11.2"
+# For parallelization
 rayon = "1.7.0"
+# To get around lack of mouse locking in egui
 mouse-rs = "0.4.2"
 
 # Build `backtrace` with optimizations for `color-eyre` performance

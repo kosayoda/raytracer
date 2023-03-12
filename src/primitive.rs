@@ -93,13 +93,13 @@ impl Vec3 {
         self.x.abs() < 1e-8_f32 && self.y.abs() < 1e-8_f32 && self.z.abs() < 1e-8_f32
     }
 
-    pub fn to_rgb(&self, scale: f32) -> Rgb<u8> {
+    pub fn to_rgb(&self, scale: f32) -> [u8; 3] {
         let f = self.0;
-        Rgb([
+        [
             ((f.x * scale).sqrt().clamp(0.0, 0.999) * 255.999) as u8,
             ((f.y * scale).sqrt().clamp(0.0, 0.999) * 255.999) as u8,
             ((f.z * scale).sqrt().clamp(0.0, 0.999) * 255.999) as u8,
-        ])
+        ]
     }
 
     pub fn reflect(self, normal: &Vec3) -> Self {
